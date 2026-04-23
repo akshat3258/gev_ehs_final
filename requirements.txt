@@ -1,0 +1,9 @@
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pandas>=2.2.0
+python-dotenv>=1.0.0
+databricks-sdk>=0.17.0
+msal>=1.25.0
+PyJWT[crypto]>=2.8.0
+python-jose[cryptography]>=3.3.0
+cryptography>=41.0.0
