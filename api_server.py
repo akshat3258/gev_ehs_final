@@ -194,9 +194,11 @@ async def predict(file: UploadFile = File(...), user=Depends(validate_azure_toke
     """
     # ── 1. Parse and validate CSV ──
     content = await file.read()
+    logger.info(f"Uploaded file size: {len(content)} bytes")
     try:
         df = pd.read_csv(io.BytesIO(content))
     except Exception as e:
+        logger.error(f"CSV parse error: {e}")
         raise HTTPException(400, f"Could not parse CSV: {e}")
 
     # Normalize column names to lowercase
@@ -218,6 +220,7 @@ async def predict(file: UploadFile = File(...), user=Depends(validate_azure_toke
             "results": results,
         })
     except Exception as e:
+        logger.error(f"Prediction error: {e}")
         raise HTTPException(500, f"Prediction failed: {e}")
 
 
