@@ -54,7 +54,11 @@ app = FastAPI(title="GEV EHS Prediction API", version="2.0")
 # ── Azure AD Configuration ────────────────────────────────────────
 AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID", "")
 AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID", "")
-AUTH_ENABLED = os.getenv("AUTH_ENABLED", "true").lower() == "true"
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "false").lower() == "true"
+
+# Disable auth if Azure AD vars not configured
+if not AZURE_TENANT_ID or not AZURE_CLIENT_ID:
+    AUTH_ENABLED = False
 
 # JWKS endpoint for token validation
 AZURE_AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"
