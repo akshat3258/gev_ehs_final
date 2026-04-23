@@ -374,35 +374,25 @@ async def predict_local(file: UploadFile = File(...), user=Depends(validate_azur
 def run_local_inference(df):
     """Run the full pipeline locally using keyword classification and heuristic scoring."""
     from theme_keywords import THEME_KEYWORDS, THEMES
+    import re
 
-    # 1. Classify themes
-    def classify_row(text):
-        if not isinstance(text, str):
-            return []
-        matched = []
-        for theme, pattern in THEME_KEYWORDS.items():
-            import re
-            if re.search(pattern, text, re.IGNORECASE):
-                matched.append(theme)
-        return matched
+    theme_patterns = {t: re.compile(p, re.IGNORECASE) for t, p in THEME_KEYWORDS.items()}
 
-    df["_themes"] = df["incident_task_desc"].apply(classify_row)
+    df["_themes"] = df["incident_task_desc"].apply(lambda x: [t for t, p in theme_patterns.items() if p.search(str(x))] if isinstance(x, str) else [])
 
-    # 2. Aggregate by site
     sites = {}
-    for _, row in df.iterrows():
+    for row in df.to_dict("records"):
         loc = row.get("location_nme", "Unknown")
         if loc not in sites:
             sites[loc] = {
                 "site_key": loc,
-                "concerns": [],
                 "themes": set(),
                 "stopwork_count": 0,
                 "dates": [],
-                "org": row.get("bus_nme", row.get("org_nme", "")),
+                "count": 0,
             }
-        sites[loc]["concerns"].append(row)
-        for t in row["_themes"]:
+        sites[loc]["count"] = sites[loc]["count"] + 1
+        for t in row.get("_themes", []):
             sites[loc]["themes"].add(t)
         ct = str(row.get("concern_type", "")).lower()
         if "stop work" in ct or "stopwork" in ct:
@@ -414,13 +404,14 @@ def run_local_inference(df):
             except:
                 pass
 
-    # 3. Score each site
+    del df
+
     import datetime
     now = datetime.datetime.now()
     site_results = []
 
     for name, s in sites.items():
-        count = len(s["concerns"])
+        count = s["count"]
         themes_covered = len(s["themes"])
         blind_spots = 21 - themes_covered
         blind_spot_names = [t for t in THEMES if t not in s["themes"]]
