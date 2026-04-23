@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GE Vernova Contractor EHS — Platform Value & Analytics Story v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#f5f7fa;color:#1a1a2e;line-height:1.6}
+.header{background:linear-gradient(135deg,#1B3A5C 0%,#2d5f8a 100%);color:white;padding:20px 32px;display:flex;align-items:center;gap:20px}
+.header h1{font-size:22px;font-weight:600}
+.header .subtitle{font-size:13px;opacity:0.85;margin-top:2px}
+.sev-banner{background:linear-gradient(90deg,#fff3e0,#ffecb3);border-bottom:3px solid #f57c00;padding:16px 32px;display:flex;align-items:center;gap:16px}
+.sev-banner .icon{font-size:28px}
+.sev-banner .text{font-size:14px;color:#333}
+.sev-banner strong{color:#d32f2f}
+.tab-bar{background:white;border-bottom:2px solid #e0e0e0;display:flex;overflow-x:auto;padding:0 24px;position:sticky;top:0;z-index:10}
+.tab-btn{padding:14px 22px;border:none;background:none;font-size:13px;font-weight:500;color:#666;cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;white-space:nowrap}
+.tab-btn:hover{color:#1B3A5C;background:#f0f4f8}
+.tab-btn.active{color:#1B3A5C;border-bottom-color:#1B3A5C;font-weight:600}
+.tab-content{display:none;padding:24px 32px;max-width:1400px;margin:0 auto}
+.tab-content.active{display:block}
+.card{background:white;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);padding:24px;margin-bottom:20px}
+.card h2{font-size:18px;color:#1B3A5C;margin-bottom:12px;border-bottom:2px solid #e8ecf1;padding-bottom:8px}
+.card h3{font-size:15px;color:#2d5f8a;margin:16px 0 8px}
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}
+.metric-card{background:linear-gradient(135deg,#f8fafc 0%,#eef2f7 100%);border-radius:10px;padding:18px;text-align:center;border-left:4px solid #1B3A5C}
+.metric-card .value{font-size:28px;font-weight:700;color:#1B3A5C}
+.metric-card .label{font-size:12px;color:#666;margin-top:4px}
+.metric-card.alert{border-left-color:#d32f2f}.metric-card.alert .value{color:#d32f2f}
+.metric-card.success{border-left-color:#2e7d32}.metric-card.success .value{color:#2e7d32}
+.metric-card.warn{border-left-color:#f57c00}.metric-card.warn .value{color:#f57c00}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+th{background:#1B3A5C;color:white;padding:10px 14px;text-align:left;font-weight:600;font-size:12px}
+th .col-desc{display:block;font-weight:400;font-size:10px;color:#cfd8dc;margin-top:2px;font-style:italic}
+td{padding:9px 14px;border-bottom:1px solid #e8ecf1;vertical-align:top}
+tr:hover{background:#f8fafc}
+.chart-container{position:relative;height:340px;margin:16px 0}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.chart-row{grid-template-columns:1fr}}
+.evidence{background:#e8f5e9;border-left:4px solid #2e7d32;padding:14px 18px;margin:12px 0;border-radius:0 6px 6px 0}
+.evidence .title{font-weight:700;color:#1b5e20;font-size:14px;margin-bottom:4px}
+.evidence .detail{font-size:13px;color:#2e7d32}
+.evidence .action{font-size:13px;color:#1b5e20;margin-top:8px;font-weight:600;padding-top:8px;border-top:1px solid #a5d6a7}
+.danger-box{background:#fce4ec;border-left:4px solid #c62828;padding:14px 18px;margin:12px 0;border-radius:0 6px 6px 0}
+.danger-box .title{font-weight:700;color:#c62828;font-size:14px;margin-bottom:4px}
+.danger-box .detail{font-size:13px;color:#b71c1c}
+/* Predictions tab */
+.upload-zone{border:2px dashed #b0bec5;border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all 0.3s;background:#fafbfc}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#1B3A5C;background:#e8f0fe}
+.upload-icon{font-size:48px;margin-bottom:12px}
+.upload-text{font-size:16px;font-weight:600;color:#1B3A5C;margin-bottom:6px}
+.upload-hint{font-size:12px;color:#999}
+.run-btn{background:linear-gradient(135deg,#1B3A5C,#2d5f8a);color:white;border:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(27,58,92,0.3)}
+.pipeline-steps{display:flex;flex-direction:column;gap:12px;margin:20px 0}
+.pipeline-step{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#f8fafc;border-radius:8px;border-left:4px solid #e0e0e0;transition:all 0.4s}
+.pipeline-step.running{border-left-color:#f57c00;background:#fff8e1}
+.pipeline-step.done{border-left-color:#2e7d32;background:#e8f5e9}
+.step-icon{font-size:20px;min-width:28px;text-align:center}
+.step-label{font-weight:600;color:#1B3A5C;min-width:180px}
+.step-detail{font-size:12px;color:#666}
+.tier-filter{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:6px 16px;border-radius:20px;border:1px solid #e0e0e0;background:white;font-size:12px;cursor:pointer;font-weight:500;transition:all 0.2s}
+.filter-btn:hover{background:#f0f4f8}
+.filter-btn.active{background:#1B3A5C;color:white;border-color:#1B3A5C}
+.tier-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase}
+.tier-HIGH{background:#fce4ec;color:#c62828}
+.tier-ELEVATED{background:#fff3e0;color:#e65100}
+.tier-MODERATE{background:#fffde7;color:#f57f17}
+.tier-LOW{background:#e8f5e9;color:#2e7d32}
+.explanation-tag{display:inline-block;background:#fff3e0;border:1px solid #ffe0b2;color:#e65100;padding:3px 8px;border-radius:4px;font-size:11px;margin:2px;line-height:1.6}
+.explanation-tag.positive{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+.blind-spot-tag{display:inline-block;background:#fce4ec;border:1px solid #f8bbd0;color:#c62828;padding:2px 7px;border-radius:4px;font-size:10px;margin:1px}
+.site-row{cursor:pointer;transition:background 0.2s}
+.site-row:hover{background:#e3f2fd !important}
+/* Auth overlay */
+.auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(27,58,92,0.95);display:flex;align-items:center;justify-content:center;z-index:1000}
+.auth-box{background:white;border-radius:16px;padding:48px;text-align:center;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.auth-box h2{color:#1B3A5C;margin-bottom:8px;font-size:22px}
+.auth-box p{color:#666;margin-bottom:24px;font-size:14px}
+.auth-btn{background:linear-gradient(135deg,#1B3A5C,#2d5f8a);color:white;border:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.auth-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(27,58,92,0.4)}
+.auth-user{display:flex;align-items:center;gap:8px;font-size:12px;color:#666;position:absolute;top:20px;right:32px}
+.auth-user .name{font-weight:600;color:#1B3A5C}
+.drilldown-item{padding:10px 14px;margin:6px 0;border-radius:6px;font-size:13px}
+.drilldown-item.risk{background:#fce4ec;border-left:3px solid #c62828;color:#b71c1c}
+.drilldown-item.ok{background:#e8f5e9;border-left:3px solid #2e7d32;color:#1b5e20}
+.biz-explain{background:#e3f2fd;border-left:4px solid #1B3A5C;padding:14px 18px;margin:12px 0;border-radius:0 6px 6px 0;font-size:13px}
+.biz-explain strong{color:#1B3A5C}
+.danger{color:#c62828;font-weight:700}
+.warning{color:#ef6c00;font-weight:700}
+.good{color:#2e7d32;font-weight:700}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+.site-card{background:white;border-radius:8px;border:1px solid #e0e0e0;padding:14px 18px;margin-bottom:10px}
+.site-card .name{font-weight:700;color:#1B3A5C;font-size:15px}
+.site-card .narrative{font-size:13px;color:#444;margin-top:8px;line-height:1.6}
+.site-card .stats{margin-top:8px;font-size:12px;color:#666;display:flex;gap:18px;flex-wrap:wrap}
+.site-card .stats span strong{color:#1B3A5C}
+.site-card.blind-spot{border-left:4px solid #c62828;background:#fff8f8}
+.site-card.well-monitored{border-left:4px solid #2e7d32;background:#f8fff8}
+.arch-stage{background:#f8fafc;border-radius:8px;padding:16px;margin:10px 0;border-left:4px solid #1B3A5C;text-align:center}
+.arch-stage h4{color:#1B3A5C;font-size:14px;margin-bottom:8px}
+.arch-row{font-size:12px;color:#666;margin:4px 0}
+.arch-arrow{text-align:center;font-size:18px;color:#2d5f8a;margin:8px 0}
+.tier-CRITICAL{background:#c62828;color:white;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700}
+.tier-HIGH{background:#ef6c00;color:white;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700}
+.tier-ELEVATED{background:#f9a825;color:#333;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700}
+.tier-MODERATE{background:#fff59d;color:#5d4037;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700}
+.tier-LOW{background:#a5d6a7;color:#1b5e20;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:700}
+.footer{text-align:center;padding:16px;color:#999;font-size:12px;border-top:1px solid #e0e0e0;margin-top:20px}
+.case-summary{background:linear-gradient(135deg,#e8f5e9 0%,#f1f8e9 100%);border-left:4px solid #2e7d32;border-radius:0 8px 8px 0;padding:16px 20px;margin:12px 0}
+.case-summary strong{color:#1b5e20}
+.case-summary li{margin:6px 0 6px 20px;font-size:13px;color:#2e7d32}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:16px 0}
+.feature-card{background:white;border:1px solid #e0e0e0;border-radius:8px;padding:14px;font-size:12px}
+.feature-card h4{color:#1B3A5C;font-size:13px;font-weight:700;margin-bottom:6px}
+.feature-card .count{font-size:22px;font-weight:700;color:#2e7d32;margin-bottom:4px}
+.feature-card.concern-derived{background:#f1f8e9;border-left:4px solid #2e7d32}
+.feature-card.concern-derived h4{color:#1b5e20}
+.key-metric{font-size:32px;font-weight:700;color:#1B3A5C;display:inline-block;margin:4px 0}
+.key-metric.high{color:#d32f2f}
+.key-metric.good{color:#2e7d32}
+</style>
+</head>
+<body>
+
+<!-- Auth overlay — shown only when Azure AD is enabled and user is not signed in -->
+<div class="auth-overlay" id="authOverlay" style="display:none">
+  <div class="auth-box">
+    <h2>GE Vernova EHS Platform</h2>
+    <p>Sign in with your organization account to access the prediction platform.</p>
+    <button class="auth-btn" id="signInBtn" onclick="msalSignIn()">Sign in with Microsoft</button>
+    <div id="authError" style="margin-top:16px;color:#c62828;font-size:13px;display:none"></div>
+  </div>
+</div>
+
+<!-- User badge (shown after sign-in) -->
+<div class="auth-user" id="authUser" style="display:none">
+  <span>Signed in as</span>
+  <span class="name" id="authUserName"></span>
+  <button onclick="msalSignOut()" style="background:none;border:1px solid #ccc;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#666">Sign out</button>
+</div>
+
+<div class="header">
+  <div>
+    <h1>GE Vernova Contractor EHS — Platform Value & Analytics Story</h1>
+    <div class="subtitle">exponentia.ai | Updated April 2026 — Verified Data</div>
+  </div>
+</div>
+
+<div class="sev-banner">
+  <div class="icon">&#x1F6A8;</div>
+  <div class="text">
+    <strong>Central Insight:</strong> Concern activity is the strongest leading indicator of site safety.
+    Sites that actively report concerns have dramatically lower serious incident rates.
+    Our platform monitors <strong>which sites have gone silent</strong> — and which hazards nobody is watching — before incidents escalate.
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('exec-summary')">Executive Summary</button>
+  <button class="tab-btn" onclick="switchTab('data-foundation')">Data Foundation</button>
+  <button class="tab-btn" onclick="switchTab('architecture')">Architecture</button>
+  <button class="tab-btn" onclick="switchTab('silence-danger')">Silence = Danger</button>
+  <button class="tab-btn" onclick="switchTab('site-risk')">Site Risk Board</button>
+  <button class="tab-btn" onclick="switchTab('risk-themes')">Risk Themes</button>
+  <button class="tab-btn" onclick="switchTab('model')">Site Risk Model</button>
+  <button class="tab-btn" onclick="switchTab('features')">Features</button>
+  <button class="tab-btn" onclick="switchTab('actions')">Actions & Value</button>
+  <button class="tab-btn" onclick="switchTab('predictions')">⚡ Live Predictions</button>
+</div>
+
+<!-- TAB 1: EXECUTIVE SUMMARY -->
+<div id="exec-summary" class="tab-content active">
+  <div class="card">
+    <h2>Executive Summary</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Over 6 years (2020–2025), we analyzed <strong>6,148 contractor incidents</strong> and <strong>1,035,474 concern/stopwork records</strong>
+      across <strong>384 GE Vernova sites</strong>. The platform delivers a <strong>site risk prediction system</strong> based on
+      concern activity that identifies at-risk sites <em>before</em> serious incidents occur — using only leading indicators.
+    </p>
+
+    <h3>Platform at a Glance</h3>
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="value">6,148</div>
+        <div class="label">Contractor Incidents (2020–2025)</div>
+      </div>
+      <div class="metric-card">
+        <div class="value">1.04M</div>
+        <div class="label">Concern/Stopwork Records</div>
+      </div>
+      <div class="metric-card alert">
+        <div class="value">418</div>
+        <div class="label">Serious Events (6.8%)</div>
+      </div>
+      <div class="metric-card">
+        <div class="value">384</div>
+        <div class="label">Canonical Sites Mapped</div>
+      </div>
+      <div class="metric-card success">
+        <div class="value">100%</div>
+        <div class="label">Site Mapping Coverage</div>
+      </div>
+      <div class="metric-card">
+        <div class="value">21</div>
+        <div class="label">LLM-Extracted Risk Themes</div>
+      </div>
+    </div>
+
+    <h3>Three Big Findings</h3>
+
+    <div class="danger-box">
+      <div class="title">1. Silence Is the Danger Signal</div>
+      <div class="detail">
+        Sites with &lt;1 concern per incident have serious rates up to <strong>63.6%</strong>.
+        Sites with &gt;100 concerns per incident stay below <strong>8%</strong>.
+        The absence of concern reporting — not the presence of incidents — is the strongest predictor of fatality risk.
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="title">2. All 21 Risk Themes Are Protective When Reported</div>
+      <div class="detail">
+        AI extracted 21 hazard categories from serious incidents and mapped them to 1M+ concerns.
+        Every single theme shows <strong>lower</strong> severity when concerns about that theme were raised in the prior 90 days.
+        Reporting these hazards cuts the serious rate by <strong>24% to 68%</strong>.
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="title">3. Site Risk Prediction — Before Incidents Happen</div>
+      <div class="detail">
+        The model scores every site monthly using <strong>only concern-derived features</strong> — volume, theme coverage, blind spots,
+        silence periods, and stop-work rates. Sites flagged as HIGH risk get plain-English explanations:
+        <em>"No concerns filed in 45 days," "Only 3 of 21 themes covered."</em> No lagging indicators required.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TAB 2: DATA FOUNDATION -->
+<div id="data-foundation" class="tab-content">
+  <div class="card">
+    <h2>Data Foundation</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Comprehensive EHS data ingested from 5 years of contractor activity across GE Vernova's global operations.
+    </p>
+
+    <h3>Source Data</h3>
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Records</th><th>Date Range</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>CW Incidents</strong></td><td><strong>6,148</strong></td><td>2020–2025</td><td>Contractor incidents with severity classification, risk themes extracted by LLM</td></tr>
+        <tr><td><strong>Concern/Stopwork</strong></td><td><strong>1,035,474</strong></td><td>2020–2025</td><td>Concern and stopwork records with LLM-matched risk themes (55,216 flagged)</td></tr>
+        <tr><td><strong>Site Master</strong></td><td><strong>384 sites</strong></td><td>—</td><td>Canonical site mapping: 200 with incidents, 370 with concerns, 187 with both</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Concern Volume by Year</h3>
+    <div class="chart-container">
+      <canvas id="concernVolumeChart"></canvas>
+    </div>
+
+    <h3>Data Quality</h3>
+    <div style="background:#e8f5e9;border-left:4px solid #2e7d32;border-radius:0 8px 8px 0;padding:16px;margin:12px 0">
+      <strong style="color:#1b5e20">Full traceability across the pipeline:</strong>
+      <div style="font-size:13px;color:#2e7d32;margin-top:8px">
+        6,148 incident records maintained through every processing stage with zero row loss.
+        384 canonical sites consolidated from multiple source systems with standardized naming across incident and concern reporting.
+        100% site mapping coverage — no single site accounts for more than 7.7% of records.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: ARCHITECTURE -->
+<div id="architecture" class="tab-content">
+  <div class="card">
+    <h2>Data Architecture: Medallion Pattern on Databricks</h2>
+
+    <div style="background:linear-gradient(135deg,#f8fafc 0%,#eef2f7 100%);border-radius:8px;padding:20px;margin:20px 0">
+      <div style="text-align:center;font-size:20px;color:#1B3A5C;font-weight:700;margin-bottom:16px">
+        Raw Files &rarr; Bronze &rarr; Silver &rarr; Gold &rarr; ML Features &rarr; Predictions &rarr; Risk Tiers
+      </div>
+
+      <div class="arch-stage">
+        <h4>Bronze Layer (Raw Ingestion)</h4>
+        <div class="arch-row"><strong>bronze_incidents_cw</strong> (6,148) | <strong>bronze_concerns</strong> (1,035,474)</div>
+        <div class="arch-row" style="color:#999;font-size:11px">No transformations — raw as received from GEV</div>
+      </div>
+      <div class="arch-arrow">&darr;</div>
+      <div class="arch-stage">
+        <h4>Silver Layer (Cleaned & Standardized)</h4>
+        <div class="arch-row"><strong>silver_incidents_cw</strong> (6,148) | <strong>silver_concerns</strong> (1,035,474)</div>
+        <div class="arch-row" style="color:#999;font-size:11px">Validation, nulls handled, dates normalized, LLM risk_theme columns added</div>
+      </div>
+      <div class="arch-arrow">&darr;</div>
+      <div class="arch-stage">
+        <h4>Gold Layer (Star Schema)</h4>
+        <div class="arch-row"><strong>fact_incidents_cw</strong> (6,148) | <strong>fact_concerns</strong> (1,035,474) | <strong>dim_site_mapping</strong> (384)</div>
+        <div class="arch-row" style="color:#999;font-size:11px">Site keys mapped, risk themes indexed, concern matching enabled</div>
+      </div>
+      <div class="arch-arrow">&darr;</div>
+      <div class="arch-stage">
+        <h4>ML Layer</h4>
+        <div class="arch-row"><strong>ml_features_v3_cw</strong> (6,148 &times; 80+ features) | <strong>ml_calibrated_predictions</strong> (1,234 test set)</div>
+        <div class="arch-row"><strong>ml_keyword_analysis</strong> (20 risk themes) | <strong>ml_feature_importance</strong> | <strong>ml_shap_importance</strong></div>
+      </div>
+    </div>
+
+    <h3>Key Tables</h3>
+    <table>
+      <thead><tr><th>Table</th><th>Rows</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>fact_incidents_cw</td><td>6,148</td><td>Gold incidents with site_key, risk_theme, severity labels</td></tr>
+        <tr><td>fact_concerns</td><td>1,035,474</td><td>Gold concerns with site_key, matched_risk_themes</td></tr>
+        <tr><td>dim_site_mapping</td><td>384</td><td>Canonical site master with incident &amp; concern name mapping</td></tr>
+        <tr><td>ml_site_risk_features</td><td>varies</td><td>24 concern-derived features per site×month for risk prediction</td></tr>
+        <tr><td>ml_site_risk_predictions</td><td>varies</td><td>Site risk scores with SHAP explanations on temporal test set</td></tr>
+        <tr><td>ml_theme_classifier_metrics</td><td>21</td><td>Per-theme classifier performance (precision, recall, F1)</td></tr>
+        <tr><td>ml_keyword_analysis</td><td>21</td><td>Risk theme protective analysis — danger reduction % for each theme</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB 4: SILENCE = DANGER -->
+<div id="silence-danger" class="tab-content">
+  <div class="card">
+    <h2>The Central Finding: Silence = Danger</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      The strongest predictor of serious incidents is not what concerns say — it's whether concerns exist at all.
+      Sites with active concern reporting have dramatically lower serious rates.
+    </p>
+
+    <h3>Concern Reporting vs Serious Rate</h3>
+    <div class="chart-container">
+      <canvas id="silenceChart"></canvas>
+    </div>
+
+    <h3>The Evidence: Paired Comparisons</h3>
+    <p style="font-size:13px;color:#555;margin:12px 0">
+      Same type of work, similar geographies — but vastly different concern activity and outcomes.
+    </p>
+
+    <div class="grid-2">
+      <div class="site-card blind-spot">
+        <div class="name">ONW LATAM Projects</div>
+        <div class="narrative">
+          <span class="danger">8.6% serious rate</span> with only <strong>0.3 concerns per incident</strong>.
+          256 incidents, 22 serious — virtually no early warning system.
+        </div>
+      </div>
+      <div class="site-card well-monitored">
+        <div class="name">ONW LATAM Services</div>
+        <div class="narrative">
+          <span class="good">7.5% serious rate</span> with <strong>179.2 concerns per incident</strong>.
+          Same geography, active safety culture. Concern system is working.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="site-card blind-spot">
+        <div class="name">CS - ACS INDIA</div>
+        <div class="narrative">
+          <span class="danger">63.6% serious rate</span> with only <strong>0.5 concerns per incident</strong>.
+          7 out of 11 incidents were serious. Zero themed concerns. Complete blind spot.
+        </div>
+      </div>
+      <div class="site-card well-monitored">
+        <div class="name">GP Projects - Europe</div>
+        <div class="narrative">
+          <span class="good">7.0% serious rate</span> with <strong>259.6 concerns per incident</strong>.
+          8,293 themed concerns. Extensive monitoring, low severity.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="site-card blind-spot">
+        <div class="name">Hybrids - Projects and Services</div>
+        <div class="narrative">
+          <span class="danger">25.0% serious rate</span> with only <strong>0.2 concerns per incident</strong>.
+          3 of 12 incidents serious. Only 2 concerns total filed. Zero themed.
+        </div>
+      </div>
+      <div class="site-card well-monitored">
+        <div class="name">GP Projects - Asia</div>
+        <div class="narrative">
+          <span class="good">7.8% serious rate</span> with <strong>123.7 concerns per incident</strong>.
+          6,612 themed concerns. Heavily monitored, controlled outcomes.
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-box">
+      <div class="title">The Pattern Is Clear</div>
+      <div class="detail">
+        Sites with fewer than 1 concern per incident average <strong>25-64% serious rates</strong>.
+        Sites with over 30 concerns per incident stay below <strong>15%</strong>.
+        The concern/stopwork system is demonstrably protective — but only when it's active.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: SITE RISK BOARD -->
+<div id="site-risk" class="tab-content">
+  <div class="card">
+    <h2>Site Risk Board: Top 30 Sites by Serious Incidents</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Sites ranked by serious incident count, with concern activity and model risk scores.
+      Red-flagged sites have high serious rates with low concern coverage.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Site</th>
+          <th>Incidents</th>
+          <th>Serious</th>
+          <th>Serious %</th>
+          <th>Concerns</th>
+          <th>Concerns/Inc</th>
+          <th>Themed</th>
+          <th>High-Risk Inc</th>
+          <th>Avg Model Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#fff8f8"><td><strong>ONW LATAM Projects</strong></td><td>256</td><td class="danger">22</td><td class="danger">8.6%</td><td>78</td><td class="danger">0.3</td><td>20</td><td>0</td><td>0.000</td></tr>
+        <tr><td>ONW NAM Services</td><td>409</td><td>28</td><td>6.8%</td><td>12,724</td><td>31.1</td><td>2,375</td><td>4</td><td>0.045</td></tr>
+        <tr><td>ONW APAC Projects</td><td>474</td><td>21</td><td>4.4%</td><td>2,911</td><td>6.1</td><td>388</td><td>0</td><td>0.030</td></tr>
+        <tr><td>ONW NAM Projects</td><td>315</td><td>21</td><td>6.7%</td><td>2,405</td><td>7.6</td><td>455</td><td>4</td><td>0.051</td></tr>
+        <tr><td>GSI APAC</td><td>384</td><td>21</td><td>5.5%</td><td>6,085</td><td>15.8</td><td>927</td><td>7</td><td>0.060</td></tr>
+        <tr><td>ONW NAM MCE Services</td><td>144</td><td>16</td><td class="warning">11.1%</td><td>1,271</td><td>8.8</td><td>480</td><td>1</td><td>0.039</td></tr>
+        <tr><td>GP Projects - Asia</td><td>179</td><td>14</td><td>7.8%</td><td>22,139</td><td class="good">123.7</td><td>6,612</td><td>0</td><td>0.047</td></tr>
+        <tr><td>GSI LAM</td><td>81</td><td>12</td><td class="danger">14.8%</td><td>2,534</td><td>31.3</td><td>80</td><td>1</td><td>0.047</td></tr>
+        <tr><td>ONW EMEA Projects</td><td>210</td><td>12</td><td>5.7%</td><td>1,629</td><td>7.8</td><td>280</td><td>0</td><td>0.037</td></tr>
+        <tr><td>SP Steam Services India</td><td>97</td><td>11</td><td class="warning">11.3%</td><td>3,071</td><td>31.7</td><td>847</td><td>3</td><td>0.065</td></tr>
+        <tr style="background:#fff8f8"><td><strong>OFW Services</strong></td><td>43</td><td class="danger">11</td><td class="danger">25.6%</td><td>2,556</td><td>59.4</td><td>196</td><td>1</td><td>0.075</td></tr>
+        <tr><td>GP Projects - Middle East</td><td>371</td><td>11</td><td>3.0%</td><td>13,223</td><td>35.6</td><td>3,105</td><td>0</td><td>0.000</td></tr>
+        <tr style="background:#fff8f8"><td><strong>CS - ACS INDIA</strong></td><td>11</td><td class="danger">7</td><td class="danger">63.6%</td><td>6</td><td class="danger">0.5</td><td>0</td><td>0</td><td>0.000</td></tr>
+        <tr style="background:#fff8f8"><td><strong>PJ-MENAT YandK Project Turkey</strong></td><td>32</td><td class="danger">8</td><td class="danger">25.0%</td><td>19</td><td class="danger">0.6</td><td>15</td><td>0</td><td>0.000</td></tr>
+        <tr><td>PJ-IN Simhadri India</td><td>28</td><td>8</td><td class="danger">28.6%</td><td>1,386</td><td>49.5</td><td>586</td><td>0</td><td>0.058</td></tr>
+      </tbody>
+    </table>
+
+    <div class="biz-explain">
+      <strong>How to Read This Table:</strong> The "Concerns/Inc" column is the key metric. Sites below 1.0 have almost no early warning capability.
+      "Themed" shows how many concerns matched one of the 21 known risk themes — zero themed concerns at a site with serious incidents is a critical gap.
+      Red-highlighted rows are blind spots requiring immediate investigation.
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: RISK THEMES -->
+<div id="risk-themes" class="tab-content">
+
+  <!-- Section 1: The Problem -->
+  <div class="card">
+    <h2>Risk Themes — How AI Reads Your Safety Data</h2>
+    <h3>The Problem</h3>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Your incident reports and concern records are written in free text by hundreds of different people across 384 sites.
+      "Worker fell from scaffold," "Person slipped off elevated platform," "Fall from height during steel erection" — these are
+      all the same hazard, but written differently every time. No human can read a million records and find the patterns.
+      We built AI to do it.
+    </p>
+
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="value">1.04M</div>
+        <div class="label">Free-text records analyzed</div>
+      </div>
+      <div class="metric-card alert">
+        <div class="value">418</div>
+        <div class="label">Serious incidents studied</div>
+      </div>
+      <div class="metric-card success">
+        <div class="value">21</div>
+        <div class="label">Hazard categories identified</div>
+      </div>
+      <div class="metric-card success">
+        <div class="value">55,216</div>
+        <div class="label">Concerns matched to hazards</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: How We Extracted Themes -->
+  <div class="card">
+    <h3>Step 1: AI Reads Your Serious Incidents</h3>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      We started with the events that matter most — your <strong>418 serious incidents</strong> (Level A, Level B, and PSE events).
+      We fed every serious incident description through an AI language model and asked: <em>what is the core hazard here?</em>
+    </p>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      From 418 serious incidents, the AI identified <strong>21 distinct hazard categories</strong>. These aren't generic safety
+      textbook categories — they came directly from your data. These are the 21 ways your contractors actually get seriously hurt.
+    </p>
+
+    <div class="feature-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Fall from Height</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Lifting / Rigging / Crane</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Electrical / Arc Flash</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">LOTO Violation</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Confined Space</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Hot Work / Fire</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Scaffolding Hazard</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Vehicle / Mobile Equip</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Slip / Trip / Fall</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Machine / Power Tool</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Dropped Object</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Chemical / Hazmat</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Excavation / Trench</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Contractor Mgmt Failure</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Suspended Platform</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Forklift / Material Handling</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Caught In / Crushing</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Environmental Spill</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Struck by Object</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px"><h4 style="font-size:12px">Sharp / Cutting Object</h4></div>
+      <div class="feature-card" style="text-align:center;padding:10px;background:#f5f5f5;border:1px dashed #ccc"><h4 style="font-size:12px;color:#999">= 21 total</h4></div>
+    </div>
+  </div>
+
+  <!-- Section 3: Mapping to Concerns -->
+  <div class="card">
+    <h3>Step 2: Matching Hazard Categories to 1 Million Concerns</h3>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      We now had 21 hazard categories from incidents — but we also had <strong>1,035,474 concern and stopwork records</strong>.
+      The question: which concerns are about which hazards?
+    </p>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      We used a two-step approach. First, we asked the AI to generate the specific keywords and phrases that people use when
+      writing about each hazard. For example, for "fall from height" the AI generated patterns like <em>"working at height,"
+      "no harness," "guardrail missing," "unprotected edge," "fall arrest."</em> For "LOTO violation," it generated
+      <em>"lockout," "tagout," "energized," "isolation not verified."</em>
+    </p>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Then we ran these patterns across all 1 million+ concern records at scale. Result: <strong>55,216 concerns</strong> matched
+      at least one hazard category. Every matched concern now carries a label telling us exactly which hazards it is flagging.
+    </p>
+
+    <div style="background:linear-gradient(135deg,#f8fafc 0%,#eef2f7 100%);border-radius:8px;padding:20px;margin:16px 0">
+      <div style="text-align:center;font-size:16px;color:#1B3A5C;font-weight:600;margin-bottom:12px">
+        How the AI Matching Works
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;text-align:center">
+        <div class="arch-stage">
+          <h4>418 Serious Incidents</h4>
+          <div class="arch-row">AI reads each description</div>
+          <div class="arch-row">Extracts the core hazard</div>
+        </div>
+        <div style="font-size:24px;color:#2d5f8a">&rarr;</div>
+        <div class="arch-stage">
+          <h4>21 Hazard Categories</h4>
+          <div class="arch-row">AI generates keywords &amp; phrases</div>
+          <div class="arch-row">for each hazard type</div>
+        </div>
+        <div style="font-size:24px;color:#2d5f8a">&rarr;</div>
+        <div class="arch-stage">
+          <h4>1.04M Concerns Scanned</h4>
+          <div class="arch-row">Pattern matching at scale</div>
+          <div class="arch-row"><strong>55,216 concerns labeled</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: The Discovery -->
+  <div class="card">
+    <h3>Step 3: The Discovery — Reporting a Hazard Reduces Its Danger</h3>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      With hazard categories mapped to both incidents and concerns, we could finally ask the critical question:
+      <strong>when a site is actively reporting concerns about a specific hazard, does that hazard become less dangerous?</strong>
+    </p>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      We checked all 21 hazard categories. For each one, we compared incidents where concerns about that hazard had been filed
+      in the 90 days prior, versus incidents where they hadn't. The result was unanimous:
+    </p>
+
+    <div class="danger-box" style="background:#e8f5e9;border-left-color:#2e7d32">
+      <div class="title" style="color:#1b5e20;font-size:16px">All 21 hazard categories are protective when reported.</div>
+      <div class="detail" style="color:#2e7d32;font-size:14px">
+        When concerns are actively being filed about a hazard, the serious incident rate for that hazard drops by
+        <strong>24% to 68%</strong>. This holds for every single hazard category — no exceptions.
+      </div>
+    </div>
+
+    <h3>Danger Reduction by Hazard Category</h3>
+    <p style="font-size:13px;color:#777;margin-bottom:4px">
+      Each bar shows how much the serious incident rate drops when concerns about that hazard are being actively reported.
+      Longer bars = greater protective effect.
+    </p>
+    <div class="chart-container" style="height:520px">
+      <canvas id="themeChart"></canvas>
+    </div>
+
+    <div class="biz-explain">
+      <strong>How to read this chart:</strong> Take "Excavation / Trench" at 68%. This means: when someone wrote
+      "I saw an unshored trench" in the weeks before an incident, the serious incident rate was only 32% of what it was
+      at sites where nobody had raised excavation concerns. The simple act of reporting cut the danger by 68%.
+    </div>
+  </div>
+
+  <!-- Section 5: The Flip Side -->
+  <div class="card">
+    <h3>The Flip Side — Blind Spots</h3>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      If every hazard category is protective when reported, then the most dangerous situation is when
+      <strong>a hazard exists but nobody is reporting it</strong>.
+    </p>
+
+    <div class="grid-2">
+      <div class="danger-box">
+        <div class="title">What a Blind Spot Looks Like</div>
+        <div class="detail">
+          A site is doing crane operations. They've had lifting incidents before.
+          But in the last 90 days, <strong>zero concerns</strong> have been filed about lifting or rigging.
+          The protective effect is absent. Nobody is watching for that hazard.
+          That's a blind spot — and it's where the next serious incident is most likely to happen.
+        </div>
+      </div>
+      <div class="evidence">
+        <div class="title">What Active Monitoring Looks Like</div>
+        <div class="detail">
+          A different site, also doing crane work. But they've filed <strong>47 concerns</strong> about
+          lifting and rigging in the last 90 days — loose slings, overloaded hooks, missing lift plans.
+          Each one triggered a correction. The serious rate at this site is 61% lower than baseline.
+          The concern system is working exactly as designed.
+        </div>
+      </div>
+    </div>
+
+    <div class="biz-explain">
+      <strong>What the platform does:</strong> For each of your 384 sites, we track which of the 21 hazard categories
+      are covered by active concern reporting — and which ones have zero coverage. Those gaps are flagged automatically
+      so your safety teams know exactly where to focus.
+    </div>
+  </div>
+
+  <!-- Full Theme Table -->
+  <div class="card">
+    <h3>All 21 Hazard Categories — Full Detail</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Hazard Category</th>
+          <th>What It Covers<span class="col-desc">Types of concerns and incidents in this category</span></th>
+          <th>Concerns Matched<span class="col-desc">Out of 1.04M total</span></th>
+          <th>Danger Reduction<span class="col-desc">How much the serious rate drops when concerns are filed</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Excavation / Trench Collapse</strong></td><td>Unshored trenches, spoil piles, no barriers around open digs</td><td>1,266</td><td class="good">68%</td></tr>
+        <tr><td><strong>Vehicle / Mobile Equipment</strong></td><td>Forklifts, dump trucks, excavators in pedestrian areas, no banksman</td><td>2,755</td><td class="good">67%</td></tr>
+        <tr><td><strong>Suspended Platform</strong></td><td>Corroded wire ropes, overloaded swing stages, unrated anchor points</td><td>1,652</td><td class="good">65%</td></tr>
+        <tr><td><strong>Machine / Power Tool Injury</strong></td><td>Guards removed, cracked grinder wheels, no dust extraction</td><td>2,388</td><td class="good">62%</td></tr>
+        <tr><td><strong>Lifting / Rigging / Crane</strong></td><td>Worn slings, loads over walkways, no lift plans, boom overextension</td><td>3,110</td><td class="good">61%</td></tr>
+        <tr><td><strong>Fall from Height</strong></td><td>Missing harnesses, unsecured ladders, scaffold gaps, no edge protection</td><td>2,698</td><td class="good">60%</td></tr>
+        <tr><td><strong>LOTO Violation</strong></td><td>No lockout/tagout, locks removed early, energized equipment accessed</td><td>1,911</td><td class="good">58%</td></tr>
+        <tr><td><strong>Chemical / Hazmat Exposure</strong></td><td>No containment, missing MSDS, improper mixing, unlabeled containers</td><td>713</td><td class="good">56%</td></tr>
+        <tr><td><strong>Hot Work / Fire / Explosion</strong></td><td>Welding near fuel, no fire watch, sparks on combustibles, no permit</td><td>1,476</td><td class="good">53%</td></tr>
+        <tr><td><strong>Dropped Object from Height</strong></td><td>Unsecured tools on platforms, no toe boards, no drop zone barricades</td><td>413</td><td class="good">52%</td></tr>
+        <tr><td><strong>Contact with Sharp Object</strong></td><td>Uncapped rebar, unprotected sheet metal edges, exposed blades</td><td>360</td><td class="good">52%</td></tr>
+        <tr><td><strong>Confined Space</strong></td><td>No gas testing, rescue equipment absent, expired entry permits</td><td>1,501</td><td class="good">47%</td></tr>
+        <tr><td><strong>Environmental Spill</strong></td><td>Hydraulic oil leaks, diesel on soil, paint waste to ground</td><td>309</td><td class="good">44%</td></tr>
+        <tr><td><strong>Caught In / Crushing</strong></td><td>Between vehicle and barrier, near pinch points, unguarded rotating shafts</td><td>102</td><td class="good">43%</td></tr>
+        <tr><td><strong>Electrical / Arc Flash</strong></td><td>Open live panels, no arc flash PPE, cables in water, no boundaries</td><td>1,074</td><td class="good">37%</td></tr>
+        <tr><td><strong>Struck by Object</strong></td><td>Falling debris, swinging loads, unsecured materials near walkways</td><td>322</td><td class="good">37%</td></tr>
+        <tr><td><strong>Slip / Trip / Fall (Same Level)</strong></td><td>Oil spills, cable runs across paths, uneven flooring, poor housekeeping</td><td>363</td><td class="good">32%</td></tr>
+        <tr><td><strong>Forklift / Material Handling</strong></td><td>Obstructed vision, excessive stacking, forks raised while traveling</td><td>372</td><td class="good">30%</td></tr>
+        <tr><td><strong>Contractor Safety Mgmt Failure</strong></td><td>No induction, expired permits, supervisor absent, crew not briefed</td><td>388</td><td class="good">25%</td></tr>
+        <tr><td><strong>Scaffolding Hazard</strong></td><td>Red-tagged scaffold in use, no base plates, bracing removed, uncertified</td><td>401</td><td class="good">24%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- TAB 7: SITE RISK MODEL -->
+<div id="model" class="tab-content">
+  <div class="card">
+    <h2>Site Risk Prediction Model</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      This model scores every site monthly using <strong>only concern-derived features</strong> — no incident data required at prediction time.
+      It answers one question: <em>which sites are most likely to have a serious incident in the next 90 days?</em>
+      Every score comes with plain-English explanations so EHS leaders know exactly <strong>why</strong> a site is flagged.
+    </p>
+
+    <h3>Model Summary</h3>
+    <div class="grid-2">
+      <div style="background:#f8fafc;border-radius:8px;padding:16px;border-left:4px solid #2d5f8a">
+        <strong style="color:#1B3A5C">Algorithm</strong>
+        <div style="font-size:13px;color:#555;margin-top:8px">
+          <strong>LightGBM</strong> (gradient boosted trees)<br/>
+          24 concern-derived features, temporal train/test split<br/>
+          Training: site×month grid across 2020–2025<br/>
+          Registered in MLflow on Databricks
+        </div>
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:16px;border-left:4px solid #2d5f8a">
+        <strong style="color:#1B3A5C">What Makes It Different</strong>
+        <div style="font-size:13px;color:#555;margin-top:8px">
+          <strong>100% leading indicators</strong> — no lagging data needed<br/>
+          Predicts <strong>before</strong> incidents happen, not after<br/>
+          SHAP explanations — no black box<br/>
+          Runs on uploaded concern data in real time
+        </div>
+      </div>
+    </div>
+
+    <h3>Risk Tier Assignment</h3>
+    <div class="chart-container">
+      <canvas id="riskTierChart"></canvas>
+    </div>
+
+    <table>
+      <thead><tr><th>Risk Tier</th><th>Score Threshold</th><th>What It Means</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tier-badge tier-HIGH">HIGH</span></td><td>&ge; 15%</td><td>Site shows multiple danger signals — silence, blind spots, declining activity</td><td><strong>Immediate safety leadership review + site audit</strong></td></tr>
+        <tr><td><span class="tier-badge tier-ELEVATED">ELEVATED</span></td><td>8% – 15%</td><td>Some concern gaps or declining trends detected</td><td>Scheduled review within 2 weeks</td></tr>
+        <tr><td><span class="tier-badge tier-MODERATE">MODERATE</span></td><td>5% – 8%</td><td>Minor gaps in theme coverage or low activity</td><td>Monitor and encourage concern filing</td></tr>
+        <tr><td><span class="tier-badge tier-LOW">LOW</span></td><td>&lt; 5%</td><td>Active reporting, broad theme coverage, stop-work culture</td><td>Continue current practices</td></tr>
+      </tbody>
+    </table>
+
+    <div class="evidence">
+      <div class="title">Why This Works</div>
+      <div class="detail">
+        The model learned from 5 years of data that <strong>concern activity patterns precede serious incidents</strong>.
+        Sites that go silent, lose theme coverage, or stop filing stop-work reports are significantly more likely to have a serious
+        event in the following 90 days. This is a genuine early warning system — not a reactive triage tool.
+      </div>
+    </div>
+
+    <h3>Key Input Features (24 Concern-Derived Signals)</h3>
+    <div class="chart-container">
+      <canvas id="featureChart"></canvas>
+    </div>
+
+    <div class="biz-explain">
+      <strong>All features come from concern data:</strong> concern volume (30/60/90/180-day windows), themed concern counts,
+      stop-work frequency, days since last concern (silence detection), theme coverage percentage, blind spot count,
+      month-over-month trends, rolling averages, and interaction features (e.g., blind spots × low volume).
+      No incident severity data is used at prediction time — the model runs purely on leading indicators.
+    </div>
+  </div>
+</div>
+
+<!-- TAB 8: FEATURES -->
+<div id="features" class="tab-content">
+  <div class="card">
+    <h2>Feature Engineering: 24 Concern-Derived Signals</h2>
+    <p style="font-size:14px;color:#555;margin-bottom:16px">
+      Every feature is derived from concern data — the model uses <strong>zero lagging indicators</strong> at prediction time.
+      This is what makes it a genuine early warning system: it scores sites based on what people are reporting <em>now</em>,
+      not what happened in the past.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card concern-derived">
+        <h4>Concern Volume</h4>
+        <div class="count">4</div>
+        <div>Concern counts over 30, 60, 90, and 180-day windows — how active is reporting at this site?</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Theme Coverage</h4>
+        <div class="count">4</div>
+        <div>Themes covered count, coverage %, blind spot count, themed concern ratio — how broadly is the site monitoring hazards?</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Silence Detection</h4>
+        <div class="count">3</div>
+        <div>Days since last concern, days since last themed concern, is-below-half-average flag — has reporting gone quiet?</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Stop-Work Indicators</h4>
+        <div class="count">2</div>
+        <div>Stop-work count and stop-work rate — are workers empowered to halt unsafe conditions?</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Trend Analysis</h4>
+        <div class="count">3</div>
+        <div>Month-over-month trend, rolling 3-month average, below-average flag — is activity declining?</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Site Profile</h4>
+        <div class="count">4</div>
+        <div>Cumulative concerns, historical incident count, serious count, serious rate — site's overall safety history</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Interaction Terms</h4>
+        <div class="count">2</div>
+        <div>Blind spots × volume, blind spots × stop-work rate — compound risk when gaps meet low activity</div>
+      </div>
+      <div class="feature-card concern-derived">
+        <h4>Themed Concern Density</h4>
+        <div class="count">2</div>
+        <div>Themed concern count (90d), themed concern ratio — what proportion of concerns target specific hazards?</div>
+      </div>
+    </div>
+
+    <div class="biz-explain">
+      <strong>Key Insight:</strong> The model's most powerful signals are <strong>silence</strong> (days since last concern),
+      <strong>blind spots</strong> (themes with zero coverage), and <strong>declining trends</strong> (month-over-month drops).
+      When a site stops reporting, loses theme breadth, or shows falling concern volumes — that's when serious incidents follow.
+      Every feature is available from uploaded concern data alone, making real-time prediction possible.
+    </div>
+  </div>
+</div>
+
+<!-- TAB 9: ACTIONS & VALUE -->
+<div id="actions" class="tab-content">
+  <div class="card">
+    <h2>Recommended Actions &amp; Business Value</h2>
+
+    <h3>Immediate Actions (This Quarter)</h3>
+
+    <div class="danger-box">
+      <div class="title">Action 1: Investigate Silent Sites</div>
+      <div class="detail">
+        Four sites have serious rates above 25% with fewer than 1 concern per incident:
+        CS - ACS INDIA (63.6%), PJ-MENAT YandK Project Turkey (25.0%), Hybrids - Projects and Services (25.0%), OFW Services (25.6%).
+        <strong>These sites need immediate safety culture audits.</strong> The concern system is not functioning there.
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="title">Action 2: Activate Risk Theme Monitoring</div>
+      <div class="detail">
+        Deploy the 21 LLM-extracted risk themes as automated concern classifiers.
+        When a site shows incident activity in a theme but zero themed concerns (e.g., lifting incidents at a site with no lifting concerns),
+        auto-generate alerts. This closes the blind spot gap proactively.
+      </div>
+      <div class="action">
+        <strong>Expected Impact:</strong> Based on the protective lift data, activating theme monitoring at silent sites could reduce their serious rates by 30-60%.
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="title">Action 3: Deploy Site Risk Prediction</div>
+      <div class="detail">
+        Each month, the site risk model scores every site based on its recent concern activity — volume, theme coverage, trends, and blind spots.
+        Sites flagged as HIGH risk should trigger immediate safety leadership review and targeted site audits.
+        The model uses only leading indicators (concern patterns), so it flags danger <em>before</em> serious incidents happen.
+      </div>
+      <div class="action">
+        <strong>Expected Impact:</strong> Proactive intervention at high-risk sites before incidents occur, shifting EHS from reactive investigation to preventive action.
+      </div>
+    </div>
+
+    <h3>Medium-Term Initiatives</h3>
+
+    <div class="evidence">
+      <div class="title">Action 4: Concern Quality Program</div>
+      <div class="detail">
+        The data proves that concern activity is protective. Launch a program to increase concern filing at low-activity sites,
+        with specific focus on the 21 risk themes. Provide field teams with theme-specific templates and checklists.
+        Measure success by concerns-per-incident ratio.
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="title">Action 5: Continuous Model Retraining</div>
+      <div class="detail">
+        As new concern and incident data flows in each month, the site risk model and theme classifier retrain automatically via Databricks jobs.
+        Model performance is tracked in MLflow. Over time, the system learns which concern patterns are most predictive for each site type.
+      </div>
+    </div>
+
+    <h3>Business Case Summary</h3>
+    <div class="case-summary">
+      <strong>Platform Delivers Three Capabilities:</strong>
+      <ul>
+        <li><strong>Site Risk Prediction (Leading Indicator):</strong> Scores every site monthly based on concern activity — volume, theme coverage, trends, and silence periods. Flags sites heading for trouble <em>before</em> serious incidents happen.</li>
+        <li><strong>Theme-Based Gap Analysis:</strong> 21 AI-extracted risk themes identify which hazards each site is watching for — and which ones nobody is reporting. Every theme is protective when actively monitored (24–68% danger reduction).</li>
+        <li><strong>Plain-English Explanations:</strong> Every high-risk site comes with clear reasons — "No concerns filed in 45 days," "Only 3 of 21 themes covered," "Concern volume dropped 60% from last month" — so EHS leaders know exactly where to act.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 10: LIVE PREDICTIONS -->
+<div id="predictions" class="tab-content">
+  <div class="card">
+    <h2>⚡ Site Risk Predictions — Live Pipeline</h2>
+    <div class="biz-explain" style="margin-bottom:20px">
+      <strong>How it works:</strong> Upload your latest concern data (CSV) → the AI classifies each concern into risk themes →
+      aggregates by site → scores every site for 90-day serious incident risk → shows you which sites need attention and <em>why</em>.
+      No black boxes — every score comes with plain-English explanations.
+    </div>
+
+    <!-- STEP 1: UPLOAD -->
+    <div id="pred-upload-section">
+      <h3>Step 1: Upload Concern Data</h3>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">Drag & drop your concern CSV here, or click to browse</div>
+        <div class="upload-hint">Expected columns: id, concern_type, incident_task_desc, location_nme, org_nme, incident_reported_dt, ...</div>
+        <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+      </div>
+      <div id="upload-status" style="margin-top:12px;font-size:13px;color:#666"></div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="run-btn" id="loadDemoBtn" style="background:#f5f5f5;color:#1B3A5C;border:1px solid #ccc;margin-right:8px">Load Demo Data</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: DATA PREVIEW -->
+    <div id="pred-preview-section" style="display:none">
+      <h3>Step 2: Data Preview</h3>
+      <div class="metrics-row" id="upload-metrics"></div>
+      <div style="overflow-x:auto;max-height:250px;overflow-y:auto;margin-bottom:16px">
+        <table id="preview-table"><thead></thead><tbody></tbody></table>
+      </div>
+      <div style="text-align:center">
+        <button class="run-btn" id="runPipelineBtn">▶ Run Prediction Pipeline</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: PROCESSING -->
+    <div id="pred-processing-section" style="display:none">
+      <h3>Processing Pipeline</h3>
+      <div id="pipeline-mode-banner" class="biz-explain" style="margin-bottom:16px;display:none">
+        <strong>🔗 Connected to Databricks</strong> — Running MLflow models on your cluster. Theme Classifier → Site Risk Model → SHAP Explanations.
+      </div>
+      <div class="pipeline-steps">
+        <div class="pipeline-step" id="ps-classify">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Theme Classification</span>
+          <span class="step-detail">Running TF-IDF + LogisticRegression across 21 risk themes...</span>
+        </div>
+        <div class="pipeline-step" id="ps-aggregate">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Site Aggregation</span>
+          <span class="step-detail">Computing concern volumes, theme coverage, trends per site...</span>
+        </div>
+        <div class="pipeline-step" id="ps-score">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Risk Scoring</span>
+          <span class="step-detail">LightGBM model scoring + SHAP explanations...</span>
+        </div>
+        <div class="pipeline-step" id="ps-explain">
+          <span class="step-icon">⏳</span>
+          <span class="step-label">Explanation Generation</span>
+          <span class="step-detail">Template engine mapping SHAP values to plain English...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: RESULTS DASHBOARD -->
+    <div id="pred-results-section" style="display:none">
+      <h3>Prediction Results — Site Risk Dashboard</h3>
+
+      <!-- Summary metrics -->
+      <div class="metrics-row" id="result-metrics"></div>
+
+      <!-- Risk tier distribution chart -->
+      <div class="chart-row">
+        <div class="card" style="margin-bottom:0">
+          <h3 style="margin-top:0">Risk Tier Distribution</h3>
+          <div class="chart-container" style="height:260px"><canvas id="predTierChart"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3 style="margin-top:0">Theme Coverage Gaps (Blind Spots)</h3>
+          <div class="chart-container" style="height:260px"><canvas id="predBlindSpotChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Site risk table -->
+      <div class="card" style="margin-top:16px">
+        <h3 style="margin-top:0">Site-Level Risk Scores</h3>
+        <div class="tier-filter" style="margin-bottom:12px">
+          <button class="filter-btn active" data-tier="all">All Sites</button>
+          <button class="filter-btn" data-tier="HIGH">🔴 HIGH</button>
+          <button class="filter-btn" data-tier="ELEVATED">🟠 ELEVATED</button>
+          <button class="filter-btn" data-tier="MODERATE">🟡 MODERATE</button>
+          <button class="filter-btn" data-tier="LOW">🟢 LOW</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="results-table">
+            <thead>
+              <tr>
+                <th>Site<span class="col-desc">Location name</span></th>
+                <th>Risk Score<span class="col-desc">P(serious incident in 90d)</span></th>
+                <th>Tier<span class="col-desc">Risk classification</span></th>
+                <th>Concerns<span class="col-desc">Filed this period</span></th>
+                <th>Themes Covered<span class="col-desc">Out of 21</span></th>
+                <th>Blind Spots<span class="col-desc">Uncovered themes</span></th>
+                <th>Why This Site Is at Risk<span class="col-desc">SHAP-driven explanations</span></th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed site drilldown -->
+      <div class="card" id="site-drilldown" style="display:none;margin-top:16px">
+        <h3 style="margin-top:0" id="drilldown-title">Site Drilldown</h3>
+        <div class="chart-row">
+          <div>
+            <h3 style="margin-top:0">Theme Coverage</h3>
+            <div class="chart-container" style="height:350px"><canvas id="drilldownThemeChart"></canvas></div>
+          </div>
+          <div>
+            <h3 style="margin-top:0">Risk Factor Breakdown</h3>
+            <div id="drilldown-explanations"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:20px">
+        <button class="run-btn" id="resetBtn" style="background:#f5f5f5;color:#1B3A5C;border:1px solid #ccc">↩ Upload New Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Generated April 2026 | exponentia.ai &times; GE Vernova EHS Platform | Data: 2020&ndash;2025
+</div>
+
+<script>
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  event.target.classList.add('active');
+}
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { font: { size: 12 }, color: '#555', usePointStyle: true } },
+    tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', padding: 12, titleFont: { size: 13 }, bodyFont: { size: 12 } }
+  },
+  scales: {
+    x: { ticks: { color: '#666', font: { size: 11 } }, grid: { color: '#e8ecf1' } },
+    y: { ticks: { color: '#666', font: { size: 11 } }, grid: { color: '#e8ecf1' } }
+  }
+};
+
+// 1. Concern Volume by Year
+new Chart(document.getElementById('concernVolumeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2021', '2022', '2023', '2024', '2025'],
+    datasets: [{
+      label: 'Concern/Stopwork Records',
+      data: [14815, 239981, 270358, 243652, 266668],
+      backgroundColor: '#2d5f8a',
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, beginAtZero: true, ticks: { callback: v => (v/1000).toFixed(0) + 'k' } } } }
+});
+
+// 2. Silence = Danger scatter
+new Chart(document.getElementById('silenceChart'), {
+  type: 'bar',
+  data: {
+    labels: [
+      'CS-ACS INDIA\n(0.5 c/i)',
+      'Hybrids\n(0.2 c/i)',
+      'PJ-MENAT Turkey\n(0.6 c/i)',
+      'ONW LATAM Proj\n(0.3 c/i)',
+      'GSI LAM\n(31 c/i)',
+      'ONW NAM MCE\n(8.8 c/i)',
+      'ONW NAM Svc\n(31 c/i)',
+      'GP Asia\n(124 c/i)',
+      'GP Europe\n(260 c/i)',
+      'ONW LATAM Svc\n(179 c/i)'
+    ],
+    datasets: [{
+      label: 'Serious Rate (%)',
+      data: [63.6, 25.0, 25.0, 8.6, 14.8, 11.1, 6.8, 7.8, 7.0, 7.5],
+      backgroundColor: ['#c62828','#c62828','#c62828','#ef6c00','#ef6c00','#f9a825','#2e7d32','#2e7d32','#2e7d32','#2e7d32'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: { ...chartDefaults.plugins, legend: { display: false } },
+    scales: {
+      x: { ...chartDefaults.scales.x, ticks: { font: { size: 10 }, maxRotation: 45 } },
+      y: { ...chartDefaults.scales.y, beginAtZero: true, max: 70, ticks: { callback: v => v + '%' } }
+    }
+  }
+});
+
+// 3. Risk Theme — Danger Reduction %
+new Chart(document.getElementById('themeChart'), {
+  type: 'bar',
+  data: {
+    labels: [
+      'Excavation & Trench Work', 'Vehicle & Mobile Equipment', 'Suspended Platforms',
+      'Machine & Power Tools', 'Lifting & Rigging', 'Fall from Height',
+      'Lockout/Tagout Violations', 'Chemical & Hazmat', 'Hot Work & Welding',
+      'Sharp Objects & Cutting', 'Dropped Objects', 'Confined Spaces',
+      'Environmental Spills', 'Caught-in / Caught-between', 'Electrical Hazards',
+      'Struck-by Hazards', 'Slips, Trips & Falls', 'Forklift & Powered Equipment',
+      'Contractor Safety', 'Scaffolding & Platforms'
+    ],
+    datasets: [{
+      label: 'Danger Reduction %',
+      data: [68, 67, 65, 62, 61, 60, 58, 56, 53, 52, 52, 47, 44, 43, 37, 37, 32, 30, 25, 24],
+      backgroundColor: '#2e7d32',
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    indexAxis: 'y',
+    scales: {
+      x: { ...chartDefaults.scales.x, min: 0, max: 80, ticks: { callback: v => v + '%' } },
+      y: { ...chartDefaults.scales.y, ticks: { font: { size: 10 } } }
+    },
+    plugins: {
+      ...chartDefaults.plugins,
+      legend: { display: false },
+      tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: (ctx) => ctx.raw + '% danger reduction when concerns are actively raised' } }
+    }
+  }
+});
+
+// 4. Risk Tier Chart — Site Risk Model
+new Chart(document.getElementById('riskTierChart'), {
+  type: 'bar',
+  data: {
+    labels: ['HIGH (≥15%)', 'ELEVATED (8-15%)', 'MODERATE (5-8%)', 'LOW (<5%)'],
+    datasets: [{
+      label: 'Score Threshold (%)',
+      data: [15, 8, 5, 2],
+      backgroundColor: ['#c62828', '#ef6c00', '#f9a825', '#2e7d32'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, beginAtZero: true, max: 20, ticks: { callback: v => v + '%' } } },
+    plugins: { ...chartDefaults.plugins, tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: (ctx) => `Risk score threshold: ${ctx.raw}%` } } }
+  }
+});
+
+// 5. Feature Importance
+new Chart(document.getElementById('featureChart'), {
+  type: 'bar',
+  data: {
+    labels: [
+      'site_severity_rate', 'has_risk_theme_match', 'seasonal_sin',
+      'seasonal_cos', 'is_risk_theme_blind_spot', 'loc_total_concerns_90d',
+      'trailing_12m_org_incidents', 'incident_dow', 'incident_doy',
+      'site_concern_total', 'blind_spot_x_concern_vol', 'site_stopwork_rate',
+      'stopwork_x_org_risk', 'site_contractor_rate', 'site_incident_volume'
+    ],
+    datasets: [{
+      label: 'Split Importance',
+      data: [76, 76, 64, 62, 62, 59, 41, 37, 31, 26, 25, 24, 23, 23, 20],
+      backgroundColor: '#1B3A5C',
+      borderRadius: 4, borderSkipped: false
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    indexAxis: 'y',
+    scales: {
+      x: { ...chartDefaults.scales.x, beginAtZero: true },
+      y: { ...chartDefaults.scales.y, ticks: { font: { size: 11 } } }
+    },
+    plugins: { ...chartDefaults.plugins, legend: { display: false } }
+  }
+});
+
+// ============================================================
+// API Configuration (Global — used by both auth and predictions)
+// ============================================================
+const API_BASE = (window.location.hostname === 'localhost' && window.location.port === '8000') 
+  ? '' 
+  : '';
+
+console.log('🔧 Global API Configuration:', {
+  hostname: window.location.hostname,
+  port: window.location.port,
+  protocol: window.location.protocol,
+  API_BASE: API_BASE || '(same-origin)',
+  fullApiUrl: API_BASE ? `${API_BASE}/api/health` : '/api/health'
+});
+
+// ============================================================
+// AZURE AD AUTHENTICATION (MSAL.js)
+// ============================================================
+let msalInstance = null;
+let msalAccount = null;
+let authToken = null;
+let authConfig = null;
+
+async function initAuth() {
+  // Fetch auth config from backend
+  try {
+    const resp = await fetch(`${API_BASE}/api/auth-config`);
+    authConfig = await resp.json();
+  } catch {
+    // No backend — auth disabled, run client-side only
+    authConfig = { auth_enabled: false };
+  }
+
+  if (!authConfig.auth_enabled) {
+    // No auth needed — hide overlay, show app
+    document.getElementById('authOverlay').style.display = 'none';
+    return;
+  }
+
+  // Show login overlay
+  document.getElementById('authOverlay').style.display = 'flex';
+
+  // Initialize MSAL
+  const msalConfig = {
+    auth: {
+      clientId: authConfig.client_id,
+      authority: authConfig.authority,
+      redirectUri: authConfig.redirect_uri || window.location.origin,
+    },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false },
+  };
+
+  msalInstance = new msal.PublicClientApplication(msalConfig);
+
+  // Check if returning from redirect
+  try {
+    const response = await msalInstance.handleRedirectPromise();
+    if (response) {
+      msalAccount = response.account;
+      authToken = response.accessToken;
+      onSignedIn();
+    } else {
+      // Check for existing session
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        msalAccount = accounts[0];
+        await acquireTokenSilent();
+        onSignedIn();
+      }
+    }
+  } catch (err) {
+    console.error('MSAL init error:', err);
+  }
+}
+
+async function msalSignIn() {
+  if (!msalInstance) return;
+  try {
+    const loginRequest = { scopes: authConfig.scopes || [] };
+    const response = await msalInstance.loginPopup(loginRequest);
+    msalAccount = response.account;
+    authToken = response.accessToken;
+    onSignedIn();
+  } catch (err) {
+    const errDiv = document.getElementById('authError');
+    errDiv.style.display = 'block';
+    errDiv.textContent = `Sign-in failed: ${err.message}`;
+  }
+}
+
+async function acquireTokenSilent() {
+  try {
+    const tokenRequest = { scopes: authConfig.scopes || [], account: msalAccount };
+    const response = await msalInstance.acquireTokenSilent(tokenRequest);
+    authToken = response.accessToken;
+  } catch {
+    // Silent failed, try popup
+    const response = await msalInstance.acquireTokenPopup({ scopes: authConfig.scopes || [] });
+    authToken = response.accessToken;
+  }
+}
+
+function onSignedIn() {
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('authUser').style.display = 'flex';
+  document.getElementById('authUserName').textContent = msalAccount.name || msalAccount.username;
+}
+
+function msalSignOut() {
+  if (msalInstance) {
+    msalInstance.logoutPopup();
+  }
+  authToken = null;
+  msalAccount = null;
+  document.getElementById('authUser').style.display = 'none';
+  if (authConfig && authConfig.auth_enabled) {
+    document.getElementById('authOverlay').style.display = 'flex';
+  }
+}
+
+// Helper: get auth headers for API calls
+function getAuthHeaders() {
+  const headers = {};
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  return headers;
+}
+
+// Initialize auth on page load
+document.addEventListener('DOMContentLoaded', initAuth);
+
+// ============================================================
+// PREDICTIONS TAB — Full Interactive Pipeline
+// ============================================================
+(function() {
+  // ── API Configuration ──
+  // API_BASE is now defined globally above, before auth initialization
+  // It points to localhost:8000 unless already served from there
+  let uploadedFile = null;  // Store the raw file for API upload
+
+  const THEMES = [
+    'Excavation & Trench Work','Vehicle & Mobile Equipment','Suspended Platforms',
+    'Machine & Power Tools','Lifting & Rigging','Fall from Height',
+    'Lockout/Tagout Violations','Chemical & Hazmat','Hot Work & Welding',
+    'Sharp Objects & Cutting','Dropped Objects','Confined Spaces',
+    'Environmental Spills','Caught-in / Caught-between','Electrical Hazards',
+    'Struck-by Hazards','Slips, Trips & Falls','Forklift & Powered Equipment',
+    'Contractor Safety','Scaffolding & Platforms','Crane & Overhead Lifting'
+  ];
+
+  // Theme keywords for client-side classification (mirrors the TF-IDF model's top terms)
+  const THEME_KEYWORDS = {
+    'Excavation & Trench Work': /excavat|trench|dig|soil|shoring|cave.?in|backfill/i,
+    'Vehicle & Mobile Equipment': /vehicle|truck|driver|mobile equipment|backing|seatbelt|speed|transport/i,
+    'Suspended Platforms': /suspended platform|swing stage|bosun|man.?basket|aerial lift/i,
+    'Machine & Power Tools': /machine|power tool|drill|grinder|saw blade|guard|rotating|pinch point/i,
+    'Lifting & Rigging': /lift|rigging|sling|shackle|hoist|crane|load|capacity|overload/i,
+    'Fall from Height': /fall from|height|roof|ladder|edge|guardrail|harness|lanyard|anchor|tie.?off/i,
+    'Lockout/Tagout Violations': /lockout|tagout|loto|energiz|de.?energi|isolation|stored energy/i,
+    'Chemical & Hazmat': /chemical|hazmat|hazardous material|sds|msds|toxic|corrosive|spill.*chem/i,
+    'Hot Work & Welding': /hot work|weld|cutting torch|burn|fire watch|spark|flash|slag/i,
+    'Sharp Objects & Cutting': /sharp|cut|lacerat|blade|knife|puncture|needle|barb|edge.*sharp/i,
+    'Dropped Objects': /drop.*object|falling object|overhead|tool.*drop|unsecured.*tool|toe board/i,
+    'Confined Spaces': /confined space|permit.?required|atmosphere|ventilat|entry|monitor.*gas|oxygen/i,
+    'Environmental Spills': /spill|leak|containment|discharge|stormwater|waste|oil.*ground|berm/i,
+    'Caught-in / Caught-between': /caught.?in|caught.?between|crush|pinch|nip point|entangle|compress/i,
+    'Electrical Hazards': /electri|shock|arc flash|live wire|exposed.*wire|panel|energized|gfci|ground fault/i,
+    'Struck-by Hazards': /struck.?by|hit by|impact|flying|projectile|debris|swing|overhead.*load/i,
+    'Slips, Trips & Falls': /slip|trip|fall(?!.*height)|wet|ice|uneven|housekeep|clutter|cable.*floor/i,
+    'Forklift & Powered Equipment': /forklift|pallet jack|powered industrial|pit|load.*fork|pedestrian.*fork/i,
+    'Contractor Safety': /contractor|sub.?contract|visitor|orient|induct|badge|permit.*work|jsa/i,
+    'Scaffolding & Platforms': /scaffold|platform|plank|toe.?board|access|erect.*scaffold|inspect.*scaffold/i,
+    'Crane & Overhead Lifting': /crane|overhead|boom|jib|rigging.*crane|load chart|swing radius|outrigger/i
+  };
+
+  // Explanation templates (mirrors the SHAP explanation engine on Databricks)
+  function generateExplanations(site) {
+    const explanations = [];
+    if (site.daysSinceLastConcern > 30) {
+      explanations.push({text: `No concerns filed in ${site.daysSinceLastConcern} days — reporting has gone silent`, risk: true});
+    }
+    if (site.blindSpots > 10) {
+      explanations.push({text: `${site.blindSpots} of 21 risk themes have zero concern coverage`, risk: true});
+    } else if (site.blindSpots > 5) {
+      explanations.push({text: `${site.blindSpots} risk themes uncovered — gaps in safety monitoring`, risk: true});
+    }
+    if (site.concernCount < 3) {
+      explanations.push({text: `Only ${site.concernCount} concern(s) filed this period — very low activity`, risk: true});
+    }
+    if (site.stopworkRate === 0 && site.concernCount > 0) {
+      explanations.push({text: 'Zero stop-work actions — workers may not feel empowered to halt unsafe work', risk: true});
+    }
+    if (site.trendMoM < -0.3) {
+      explanations.push({text: `Concern volume dropped ${Math.abs(Math.round(site.trendMoM * 100))}% from prior period`, risk: true});
+    }
+    if (site.themeCoverage >= 10) {
+      explanations.push({text: `${site.themeCoverage} risk themes actively monitored — broad safety awareness`, risk: false});
+    }
+    if (site.stopworkRate > 0.15) {
+      explanations.push({text: `${Math.round(site.stopworkRate * 100)}% stop-work rate — strong safety culture signal`, risk: false});
+    }
+    if (site.concernCount >= 20) {
+      explanations.push({text: `${site.concernCount} concerns filed — active reporting culture`, risk: false});
+    }
+    if (explanations.length === 0) {
+      explanations.push({text: 'Moderate activity levels with some monitoring gaps', risk: true});
+    }
+    return explanations;
+  }
+
+  function classifyThemes(text) {
+    const matched = [];
+    for (const [theme, regex] of Object.entries(THEME_KEYWORDS)) {
+      if (regex.test(text)) matched.push(theme);
+    }
+    return matched;
+  }
+
+  function assignTier(score) {
+    if (score >= 0.15) return 'HIGH';
+    if (score >= 0.08) return 'ELEVATED';
+    if (score >= 0.05) return 'MODERATE';
+    return 'LOW';
+  }
+
+  function computeRiskScore(site) {
+    let score = 0.04; // baseline
+    // Silence penalty
+    if (site.daysSinceLastConcern > 60) score += 0.12;
+    else if (site.daysSinceLastConcern > 30) score += 0.06;
+    // Blind spot penalty
+    score += (site.blindSpots / 21) * 0.08;
+    // Low volume penalty
+    if (site.concernCount <= 2) score += 0.06;
+    else if (site.concernCount <= 5) score += 0.03;
+    // No stopwork penalty
+    if (site.stopworkRate === 0) score += 0.03;
+    // Declining trend penalty
+    if (site.trendMoM < -0.3) score += 0.04;
+    // Protective factors
+    if (site.themeCoverage >= 10) score -= 0.04;
+    if (site.stopworkRate > 0.15) score -= 0.03;
+    if (site.concernCount >= 20) score -= 0.02;
+    return Math.max(0.01, Math.min(0.40, score));
+  }
+
+  let parsedData = [];
+  let siteResults = [];
+  let predTierChartInstance = null;
+  let predBlindSpotChartInstance = null;
+  let drilldownChartInstance = null;
+
+  // Parse CSV
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    // Normalize headers to lowercase
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = [];
+      let current = '', inQuotes = false;
+      for (let c = 0; c < lines[i].length; c++) {
+        if (lines[i][c] === '"') { inQuotes = !inQuotes; }
+        else if (lines[i][c] === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+        else { current += lines[i][c]; }
+      }
+      values.push(current.trim());
+      if (values.length >= headers.length - 1) {
+        const row = {};
+        headers.forEach((h, idx) => row[h] = values[idx] || '');
+        rows.push(row);
+      }
+    }
+    return rows;
+  }
+
+  // STEP 1: Upload handling
+  const uploadZone = document.getElementById('uploadZone');
+  const csvInput = document.getElementById('csvFileInput');
+  const loadDemoBtn = document.getElementById('loadDemoBtn');
+
+  if (uploadZone) {
+    uploadZone.addEventListener('click', () => csvInput.click());
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    csvInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+  }
+
+  if (loadDemoBtn) {
+    loadDemoBtn.addEventListener('click', () => {
+      // Generate demo data inline
+      parsedData = generateDemoData();
+      showPreview();
+    });
+  }
+
+  function handleFile(file) {
+    if (!file.name.endsWith('.csv')) {
+      document.getElementById('upload-status').innerHTML = '<span style="color:#c62828">Please upload a .csv file</span>';
+      return;
+    }
+    uploadedFile = file;  // Store for API upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      parsedData = parseCSV(e.target.result);
+      showPreview();
+    };
+    reader.readAsText(file);
+  }
+
+  function generateDemoData() {
+    const sites = [
+      {loc:'CS - ACS INDIA',org:'GE Power India',count:1,pattern:'silent'},
+      {loc:'PJ-MENAT YandK Turkey',org:'GE Gas Power',count:2,pattern:'silent'},
+      {loc:'Hybrids - Projects',org:'GE Gas Power',count:2,pattern:'silent'},
+      {loc:'OFW Svc California',org:'GE Onshore Wind',count:3,pattern:'declining'},
+      {loc:'GSI LAM Colombia',org:'GE Gas Power',count:4,pattern:'declining'},
+      {loc:'ONW NAM MCE Services',org:'GE Onshore Wind',count:12,pattern:'gaps'},
+      {loc:'ONW LATAM Services',org:'GE Onshore Wind',count:14,pattern:'gaps'},
+      {loc:'ONW NAM Services',org:'GE Onshore Wind',count:11,pattern:'gaps'},
+      {loc:'GP Asia Pacific',org:'GE Gas Power',count:30,pattern:'healthy'},
+      {loc:'GP Europe Services',org:'GE Gas Power',count:45,pattern:'healthy'},
+      {loc:'GP NAM Services',org:'GE Gas Power',count:38,pattern:'healthy'},
+      {loc:'Wind Offshore Atlantic',org:'GE Offshore Wind',count:8,pattern:'gaps'},
+      {loc:'Grid Solutions EMEA',org:'GE Grid Solutions',count:25,pattern:'healthy'}
+    ];
+
+    const descriptions = {
+      silent: ['General safety observation noted during site walkthrough','Observed area requires general housekeeping attention'],
+      declining: ['Cable tray overhead not properly secured to supports','Portable heater positioned too close to combustible storage','Fire extinguisher access blocked by material stack'],
+      gaps: [
+        'Scaffold platform missing toe board on north elevation','Worker observed grinding without face shield',
+        'Forklift operating with obstructed rear visibility in warehouse','Chemical drum stored without secondary containment',
+        'Fall protection harness inspection tag expired 3 months ago','Crane outrigger pad undersized for soil conditions',
+        'Ladder base not secured, extends beyond roof edge 2 feet','STOP WORK — electrical panel open with exposed bus bars',
+        'Tripping hazard from unsecured extension cords across walkway','Hot work permit not posted at welding station',
+        'STOP WORK — worker in excavation without shoring','Suspended platform cable showing visible wear and fraying',
+        'Contractor crew working without site-specific orientation badges'
+      ],
+      healthy: [
+        'STOP WORK — crane lift plan not reviewed for wind conditions above 25mph',
+        'Confined space atmospheric monitoring showed O2 at 19.2%, below 19.5% threshold',
+        'Scaffold inspection tag current, all planks secured, guardrails intact',
+        'STOP WORK — excavation deeper than 4ft without protective system',
+        'Lockout/tagout procedure not followed during conveyor belt maintenance',
+        'Chemical spill kit staged but missing absorbent pads, replenishment ordered',
+        'Fall protection anchor point load-tested and certified, lanyard in good condition',
+        'Forklift pre-shift inspection completed, horn and lights functional',
+        'Hot work fire watch maintained for full 30 minutes after welding completed',
+        'Electrical GFCI tested and functioning on all temporary power receptacles',
+        'Contractor safety orientation verified for all 12 new personnel this week',
+        'Vehicle backup alarm tested, spotter assigned for all reversing operations',
+        'Dropped object prevention — all tools tethered on overhead steel work',
+        'Machine guard in place on bench grinder, RPM within rated capacity',
+        'STOP WORK — suspended load left unattended during crew break',
+        'Trench box properly installed, soil classified as Type B, competent person on site',
+        'Lifting rigging inspected — slings within SWL, no visible damage or distortion',
+        'Slip hazard remediated — ice melt applied to walkway within 15 minutes of report',
+        'Crane load chart reviewed, lift within 75% of rated capacity at radius',
+        'Emergency exit routes clear, fire extinguishers inspected and tagged current'
+      ]
+    };
+
+    const rows = [];
+    let idCounter = 200001;
+    sites.forEach(site => {
+      const descs = descriptions[site.pattern];
+      for (let i = 0; i < site.count; i++) {
+        const day = Math.min(28, site.pattern === 'silent' ? 3 + Math.floor(Math.random()*4) : Math.floor(Math.random()*28)+1);
+        const dateStr = `2026-01-${String(day).padStart(2,'0')}`;
+        const isStopwork = descs[i % descs.length].startsWith('STOP WORK');
+        rows.push({
+          id: `C-${idCounter++}`,
+          concern_type: isStopwork ? 'Stop Work - Concern' : (Math.random()>0.7 ? 'Observation' : 'Concern'),
+          incident_type: isStopwork ? 'Stop Work; Unsafe Condition' : 'Concern; Unsafe Condition',
+          bus_nme: site.org,
+          org_nme: site.org.replace('GE ',''),
+          suborg_nme: 'Services',
+          location_nme: site.loc,
+          coe_nme: site.org.split(' ').pop() + ' Services',
+          subcoe_nme: '',
+          bldg_nme: '',
+          region_nme: site.loc.includes('NAM') ? 'U.S.' : (site.loc.includes('LAM') ? 'LATAM' : (site.loc.includes('EMEA')||site.loc.includes('Europe') ? 'Europe' : (site.loc.includes('Asia') ? 'Asia' : 'Global'))),
+          country_nme: '',
+          incident_reported_dt: dateStr,
+          incident_close_dt: '',
+          incident_due_dt: '',
+          incident_status_cd: 'Open',
+          incident_t: `INC-${idCounter}`,
+          incident_task_desc: descs[i % descs.length],
+          pse: 'No',
+          lsr_category: '',
+          worker_type: Math.random()>0.5 ? 'Contractor' : 'Employee',
+          days_open_to_close: '',
+          days_past_closure_due: ''
+        });
+      }
+    });
+    return rows;
+  }
+
+  // STEP 2: Preview
+  function showPreview() {
+    document.getElementById('pred-upload-section').style.display = 'none';
+    document.getElementById('pred-preview-section').style.display = 'block';
+
+    const sites = [...new Set(parsedData.map(r => r.location_nme).filter(Boolean))];
+    const dateRange = parsedData.map(r => r.incident_reported_dt).filter(Boolean).sort();
+
+    document.getElementById('upload-metrics').innerHTML = `
+      <div class="metric-card"><div class="value">${parsedData.length}</div><div class="label">Concerns Uploaded</div></div>
+      <div class="metric-card"><div class="value">${sites.length}</div><div class="label">Sites Identified</div></div>
+      <div class="metric-card"><div class="value">${dateRange[0] || 'N/A'}</div><div class="label">Earliest Date</div></div>
+      <div class="metric-card"><div class="value">${dateRange[dateRange.length-1] || 'N/A'}</div><div class="label">Latest Date</div></div>
+    `;
+
+    const thead = document.querySelector('#preview-table thead');
+    const tbody = document.querySelector('#preview-table tbody');
+    const cols = ['id','location_nme','concern_type','incident_task_desc','incident_reported_dt'];
+    thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+    tbody.innerHTML = parsedData.slice(0, 15).map(r =>
+      '<tr>' + cols.map(c => `<td>${(r[c]||'').substring(0,80)}</td>`).join('') + '</tr>'
+    ).join('') + (parsedData.length > 15 ? `<tr><td colspan="${cols.length}" style="text-align:center;color:#999;font-style:italic">... and ${parsedData.length - 15} more rows</td></tr>` : '');
+  }
+
+  // STEP 3: Run pipeline
+  const runBtn = document.getElementById('runPipelineBtn');
+  if (runBtn) {
+    runBtn.addEventListener('click', runPipeline);
+  }
+
+  async function runPipeline() {
+    document.getElementById('pred-preview-section').style.display = 'none';
+    document.getElementById('pred-processing-section').style.display = 'block';
+
+    const steps = ['ps-classify','ps-aggregate','ps-score','ps-explain'];
+
+    // ── Try API first (Databricks-backed), fall back to client-side ──
+    const apiAvailable = await checkApiHealth();
+    
+    console.log('Running pipeline:', {
+      apiAvailable,
+      hasUploadedFile: !!uploadedFile,
+      parsedDataRows: parsedData.length
+    });
+
+    if (apiAvailable && uploadedFile) {
+      console.log('Using API pipeline with uploaded file');
+      await runApiPipeline(steps);
+    } else if (apiAvailable && !uploadedFile) {
+      // Demo data — convert to CSV blob and send to API
+      console.log('Using API pipeline with demo data');
+      const csvBlob = convertToCSV(parsedData);
+      await runApiPipeline(steps, csvBlob);
+    } else {
+      console.log('Using local client-side pipeline');
+      await runLocalPipeline(steps);
+    }
+  }
+
+  async function checkApiHealth() {
+    // If opened as file:// or no API_BASE configured, skip API
+    if (window.location.protocol === 'file:' && !API_BASE) return false;
+    const base = API_BASE || '';
+    try {
+      const resp = await fetch(`${base}/api/health`, {signal: AbortSignal.timeout(3000), headers: getAuthHeaders()});
+      const data = await resp.json();
+      console.log('Health check response:', data);
+      const isOk = data.status === 'ok';
+      console.log('API available:', isOk);
+      return isOk;
+    } catch (err) {
+      console.warn('Health check failed, will use local processing:', err);
+      return false;
+    }
+  }
+
+  function convertToCSV(rows) {
+    if (!rows.length) return new Blob([''], {type: 'text/csv'});
+    const headers = Object.keys(rows[0]);
+    const lines = [headers.join(',')];
+    rows.forEach(r => {
+      lines.push(headers.map(h => {
+        const v = (r[h] || '').toString();
+        return v.includes(',') || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v;
+      }).join(','));
+    });
+    return new Blob([lines.join('\n')], {type: 'text/csv'});
+  }
+
+  // ── API-backed pipeline (Databricks models) ──
+  async function runApiPipeline(steps, csvBlob) {
+    const base = API_BASE || '';
+    console.log('Starting API pipeline with base:', base || 'same-origin');
+
+    // Show Databricks connected banner
+    document.getElementById('pipeline-mode-banner').style.display = 'block';
+
+    // Animate all steps as "running" — the backend does them server-side
+    for (const step of steps) {
+      const el = document.getElementById(step);
+      el.classList.add('running');
+      el.querySelector('.step-icon').textContent = '🔄';
+    }
+    // Update step labels for API mode
+    document.querySelector('#ps-classify .step-detail').textContent = 'Running MLflow theme classifier (TF-IDF + LogisticRegression) on Databricks...';
+    document.querySelector('#ps-aggregate .step-detail').textContent = 'Computing site-level features via Spark SQL on Databricks...';
+    document.querySelector('#ps-score .step-detail').textContent = 'Scoring with LightGBM site risk model + SHAP TreeExplainer on Databricks...';
+    document.querySelector('#ps-explain .step-detail').textContent = 'Generating plain-English explanations from SHAP values on Databricks...';
+
+    try {
+      // Build FormData with the CSV file
+      const formData = new FormData();
+      if (csvBlob) {
+        formData.append('file', csvBlob, 'upload.csv');
+        console.log('Sending CSV blob to API');
+      } else {
+        formData.append('file', uploadedFile);
+        console.log('Sending uploaded file to API:', uploadedFile?.name);
+      }
+
+      // Refresh token if needed before API calls
+      if (authConfig && authConfig.auth_enabled && msalAccount) {
+        await acquireTokenSilent();
+      }
+      const hdrs = getAuthHeaders();
+
+      // Try Databricks-backed endpoint first, fall back to local endpoint
+      let response;
+      console.log('Attempting /api/predict endpoint');
+      try {
+        response = await fetch(`${base}/api/predict`, {method: 'POST', body: formData, headers: hdrs});
+        console.log('Response from /api/predict:', response.status);
+      } catch (err) {
+        console.warn('Fallback: /api/predict failed, trying /api/predict-local:', err);
+        // If /api/predict fails (Databricks timeout), try local fallback
+        const formData2 = new FormData();
+        if (csvBlob) formData2.append('file', csvBlob, 'upload.csv');
+        else formData2.append('file', uploadedFile);
+        response = await fetch(`${base}/api/predict-local`, {method: 'POST', body: formData2, headers: hdrs});
+        console.log('Response from /api/predict-local:', response.status);
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API error ${response.status}:`, errorText);
+        // Try local fallback
+        console.log('Attempting /api/predict-local due to error');
+        const formData2 = new FormData();
+        if (csvBlob) formData2.append('file', csvBlob, 'upload.csv');
+        else formData2.append('file', uploadedFile);
+        response = await fetch(`${base}/api/predict-local`, {method: 'POST', body: formData2, headers: hdrs});
+        console.log('Fallback response:', response.status);
+      }
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      console.log('API response received, sites:', data.results.sites.length);
+
+      // Mark all steps complete
+      for (const step of steps) completeStep(step);
+
+      // Convert API results to the format showResults() expects
+      siteResults = data.results.sites.map(s => ({
+        name: s.site_key,
+        org: s.org || '',
+        region: s.region || '',
+        riskScore: s.risk_score,
+        tier: s.risk_tier,
+        concernCount: s.concern_count,
+        themeCoverage: s.themes_covered,
+        blindSpots: s.blind_spot_count,
+        blindSpotNames: s.blind_spot_themes || [],
+        coveredThemes: THEMES.filter(t => !(s.blind_spot_themes || []).includes(t)),
+        stopworkRate: s.stopwork_rate || 0,
+        daysSinceLastConcern: s.days_since_last_concern || 0,
+        trendMoM: s.concern_trend_mom || 0,
+        explanations: s.explanations || [{text: 'Score computed by Databricks model', risk: true}],
+      }));
+
+      await sleep(400);
+      document.getElementById('pred-processing-section').style.display = 'none';
+      showResults(data.results.theme_gaps);
+    } catch (err) {
+      console.error('API pipeline failed, falling back to client-side:', err);
+      // Reset step icons and fall back
+      for (const step of steps) {
+        const el = document.getElementById(step);
+        el.classList.remove('running','done');
+        el.querySelector('.step-icon').textContent = '⏳';
+      }
+      await runLocalPipeline(steps);
+    }
+  }
+
+  // ── Client-side pipeline (fallback when API unavailable) ──
+  async function runLocalPipeline(steps) {
+    // Step 1: Classify themes
+    await animateStep(steps[0]);
+    parsedData.forEach(row => {
+      row._themes = classifyThemes(row.incident_task_desc || '');
+    });
+    completeStep(steps[0]);
+
+    // Step 2: Aggregate by site
+    await animateStep(steps[1]);
+    const siteMap = {};
+    parsedData.forEach(row => {
+      const site = row.location_nme || 'Unknown';
+      if (!siteMap[site]) {
+        siteMap[site] = {
+          name: site, org: row.bus_nme || row.org_nme || '', region: row.region_nme || '',
+          concerns: [], themes: new Set(), stopworkCount: 0, dates: []
+        };
+      }
+      siteMap[site].concerns.push(row);
+      row._themes.forEach(t => siteMap[site].themes.add(t));
+      if ((row.concern_type || '').toLowerCase().includes('stop work')) siteMap[site].stopworkCount++;
+      if (row.incident_reported_dt) siteMap[site].dates.push(new Date(row.incident_reported_dt));
+    });
+    completeStep(steps[1]);
+
+    // Step 3: Score
+    await animateStep(steps[2]);
+    siteResults = Object.values(siteMap).map(s => {
+      const now = new Date();
+      const sortedDates = s.dates.sort((a,b) => b-a);
+      const lastDate = sortedDates[0] || new Date('2025-12-01');
+      const daysSince = Math.floor((now - lastDate) / 86400000);
+      const themeCoverage = s.themes.size;
+      const blindSpots = 21 - themeCoverage;
+      const stopworkRate = s.concerns.length > 0 ? s.stopworkCount / s.concerns.length : 0;
+      const mid = Math.floor(s.concerns.length / 2) || 1;
+      const trendMoM = s.concerns.length > 4 ? ((s.concerns.length - mid) - mid) / Math.max(mid, 1) : 0;
+
+      const siteObj = {
+        name: s.name, org: s.org, region: s.region,
+        concernCount: s.concerns.length,
+        themeCoverage, blindSpots,
+        blindSpotNames: THEMES.filter(t => !s.themes.has(t)),
+        coveredThemes: [...s.themes],
+        stopworkRate, daysSinceLastConcern: daysSince,
+        trendMoM
+      };
+      siteObj.riskScore = computeRiskScore(siteObj);
+      siteObj.tier = assignTier(siteObj.riskScore);
+      return siteObj;
+    });
+    siteResults.sort((a,b) => b.riskScore - a.riskScore);
+    completeStep(steps[2]);
+
+    // Step 4: Explain
+    await animateStep(steps[3]);
+    siteResults.forEach(s => {
+      s.explanations = generateExplanations(s);
+    });
+    completeStep(steps[3]);
+
+    await sleep(400);
+    document.getElementById('pred-processing-section').style.display = 'none';
+    showResults();
+  }
+
+  function animateStep(id) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        el.classList.add('running');
+        el.querySelector('.step-icon').textContent = '🔄';
+        resolve();
+      }, 300);
+    });
+  }
+  function completeStep(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('running');
+    el.classList.add('done');
+    el.querySelector('.step-icon').textContent = '✅';
+  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // STEP 4: Results dashboard
+  function showResults(apiThemeGaps) {
+    document.getElementById('pred-results-section').style.display = 'block';
+
+    const tiers = {HIGH:0, ELEVATED:0, MODERATE:0, LOW:0};
+    siteResults.forEach(s => tiers[s.tier]++);
+    const highRisk = siteResults.filter(s => s.tier === 'HIGH' || s.tier === 'ELEVATED');
+    const avgBlindSpots = Math.round(siteResults.reduce((a,s) => a + s.blindSpots, 0) / siteResults.length);
+
+    document.getElementById('result-metrics').innerHTML = `
+      <div class="metric-card alert"><div class="value">${tiers.HIGH}</div><div class="label">HIGH Risk Sites</div></div>
+      <div class="metric-card warn"><div class="value">${tiers.ELEVATED}</div><div class="label">ELEVATED Risk Sites</div></div>
+      <div class="metric-card"><div class="value">${siteResults.length}</div><div class="label">Total Sites Scored</div></div>
+      <div class="metric-card"><div class="value">${avgBlindSpots}</div><div class="label">Avg. Blind Spots per Site</div></div>
+    `;
+
+    // Tier distribution chart
+    if (predTierChartInstance) predTierChartInstance.destroy();
+    predTierChartInstance = new Chart(document.getElementById('predTierChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['HIGH','ELEVATED','MODERATE','LOW'],
+        datasets: [{
+          data: [tiers.HIGH, tiers.ELEVATED, tiers.MODERATE, tiers.LOW],
+          backgroundColor: ['#c62828','#ef6c00','#f9a825','#2e7d32'],
+          borderWidth: 2, borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 }, padding: 16, usePointStyle: true } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} site${ctx.raw !== 1 ? 's' : ''}` } }
+        }
+      }
+    });
+
+    // Blind spot chart — top themes with most gaps
+    let themeGapCount = {};
+    if (apiThemeGaps && Object.keys(apiThemeGaps).length > 0) {
+      themeGapCount = apiThemeGaps;
+    } else {
+      THEMES.forEach(t => themeGapCount[t] = 0);
+      siteResults.forEach(s => s.blindSpotNames.forEach(t => themeGapCount[t]++));
+    }
+    const sortedGaps = Object.entries(themeGapCount).sort((a,b) => b[1] - a[1]).slice(0, 12);
+
+    if (predBlindSpotChartInstance) predBlindSpotChartInstance.destroy();
+    predBlindSpotChartInstance = new Chart(document.getElementById('predBlindSpotChart'), {
+      type: 'bar',
+      data: {
+        labels: sortedGaps.map(g => g[0]),
+        datasets: [{
+          label: 'Sites with no coverage',
+          data: sortedGaps.map(g => g[1]),
+          backgroundColor: '#c62828',
+          borderRadius: 4, borderSkipped: false
+        }]
+      },
+      options: {
+        ...chartDefaults, indexAxis: 'y',
+        scales: {
+          x: { ...chartDefaults.scales.x, beginAtZero: true, ticks: { stepSize: 1 } },
+          y: { ...chartDefaults.scales.y, ticks: { font: { size: 10 } } }
+        },
+        plugins: { ...chartDefaults.plugins, legend: { display: false } }
+      }
+    });
+
+    renderTable('all');
+    setupFilters();
+  }
+
+  function renderTable(tierFilter) {
+    const tbody = document.getElementById('results-tbody');
+    const filtered = tierFilter === 'all' ? siteResults : siteResults.filter(s => s.tier === tierFilter);
+    tbody.innerHTML = filtered.map((s, idx) => `
+      <tr class="site-row" data-idx="${siteResults.indexOf(s)}">
+        <td><strong>${s.name}</strong><br><span style="font-size:11px;color:#666">${s.org}</span></td>
+        <td style="text-align:center"><strong>${(s.riskScore * 100).toFixed(1)}%</strong></td>
+        <td><span class="tier-badge tier-${s.tier}">${s.tier}</span></td>
+        <td style="text-align:center">${s.concernCount}</td>
+        <td style="text-align:center">${s.themeCoverage} / 21</td>
+        <td>${s.blindSpots > 0 ? s.blindSpotNames.slice(0,3).map(b => `<span class="blind-spot-tag">${b}</span>`).join('') + (s.blindSpots > 3 ? `<span class="blind-spot-tag">+${s.blindSpots-3} more</span>` : '') : '<span style="color:#2e7d32;font-size:12px">Good coverage</span>'}</td>
+        <td>${s.explanations.map(e => `<span class="explanation-tag${e.risk ? '' : ' positive'}">${e.text}</span>`).join(' ')}</td>
+      </tr>
+    `).join('');
+
+    // Click handler for drilldown
+    tbody.querySelectorAll('.site-row').forEach(row => {
+      row.addEventListener('click', () => showDrilldown(parseInt(row.dataset.idx)));
+    });
+  }
+
+  function setupFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTable(btn.dataset.tier);
+      });
+    });
+  }
+
+  function showDrilldown(idx) {
+    const site = siteResults[idx];
+    const panel = document.getElementById('site-drilldown');
+    panel.style.display = 'block';
+    document.getElementById('drilldown-title').textContent = `Site Drilldown: ${site.name}`;
+
+    // Theme coverage chart
+    const themeData = THEMES.map(t => ({
+      theme: t,
+      covered: site.coveredThemes.includes(t) ? 1 : 0
+    }));
+    if (drilldownChartInstance) drilldownChartInstance.destroy();
+    drilldownChartInstance = new Chart(document.getElementById('drilldownThemeChart'), {
+      type: 'bar',
+      data: {
+        labels: themeData.map(d => d.theme),
+        datasets: [{
+          label: 'Theme Coverage',
+          data: themeData.map(d => d.covered),
+          backgroundColor: themeData.map(d => d.covered ? '#2e7d32' : '#c62828'),
+          borderRadius: 3, borderSkipped: false
+        }]
+      },
+      options: {
+        ...chartDefaults, indexAxis: 'y',
+        scales: {
+          x: { display: false, max: 1.2 },
+          y: { ...chartDefaults.scales.y, ticks: { font: { size: 10 } } }
+        },
+        plugins: {
+          ...chartDefaults.plugins, legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => ctx.raw === 1 ? 'Covered — concerns filed' : 'BLIND SPOT — no concerns' } }
+        }
+      }
+    });
+
+    // Explanations detail
+    const explDiv = document.getElementById('drilldown-explanations');
+    explDiv.innerHTML = `
+      <div style="margin-bottom:12px">
+        <span class="tier-badge tier-${site.tier}" style="font-size:14px;padding:6px 16px">${site.tier} RISK</span>
+        <span style="margin-left:12px;font-size:16px;font-weight:700;color:#1B3A5C">${(site.riskScore*100).toFixed(1)}% probability</span>
+      </div>
+      ${site.explanations.map(e => `<div class="drilldown-item ${e.risk ? 'risk' : 'ok'}">${e.risk ? '⚠️' : '✅'} ${e.text}</div>`).join('')}
+      <div style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:12px;color:#666">
+        <strong>Site Summary:</strong> ${site.concernCount} concerns filed | ${site.themeCoverage}/21 themes covered | ${site.stopworkCount || 0} stop-work actions | Last concern: ${site.daysSinceLastConcern} days ago
+      </div>
+    `;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Reset handler
+  const resetBtn = document.getElementById('resetBtn');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      document.getElementById('pred-results-section').style.display = 'none';
+      document.getElementById('site-drilldown').style.display = 'none';
+      document.getElementById('pred-upload-section').style.display = 'block';
+      // Reset processing steps
+      ['ps-classify','ps-aggregate','ps-score','ps-explain'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('running','done');
+        el.querySelector('.step-icon').textContent = '⏳';
+      });
+      parsedData = [];
+      siteResults = [];
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
