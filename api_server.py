@@ -118,11 +118,8 @@ async def validate_azure_token(
         raise HTTPException(401, f"Invalid token: {e}")
 
 
-# CORS — restrict to your Azure App Service domain in production
-ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:8000,http://localhost:3000,http://127.0.0.1:5500,http://127.0.0.1:3000"
-).split(",")
+# CORS — allow all origins for now
+ALLOWED_ORIGINS = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
